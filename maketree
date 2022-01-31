@@ -1,0 +1,72 @@
+#!/usr/bin/env python
+#Author: Manhong Dai, manhongdai@gmail.com
+#License: GPLv3
+import argparse, subprocess
+def get_args():
+	parser = argparse.ArgumentParser()
+	parser.add_argument("target", help="pass to make", nargs='*')
+	parser.add_argument("-V", "--version", action='version', version='20220131')
+#	parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true", required=False)
+	parser.add_argument("-B", "--always-make", help="pass to make", action="store_true")
+	parser.add_argument("-C", "--directory", metavar="DIR", help="pass to make",  required=False)
+	parser.add_argument("-f", "--file", metavar="FILE", help="pass to make",  required=False)
+	return parser.parse_args()
+	
+class Node():
+	def __init__(self, target, parent, depth):
+		self.target = target
+		self.parent = parent
+		self.depth = depth
+		self.children = []
+	def add_child(self, target):
+		idx = target.index("'")
+		depth = int(idx/2) + 1
+		node = self
+		for i in range(self.depth-depth+1):
+			node = node.parent
+		child = Node(target[idx+1:-1], node, depth)
+		node.children.append(child)
+		return child
+	def print_tree(self, spaces):
+		for i in range(self.depth):
+			if i == self.depth - 1:
+				if spaces[i]:
+					print('├── ', end='')
+				else:
+					print('└── ', end='')
+			else:
+				if spaces[i]:
+					print('│   ', end='')
+				else:
+					print('    ', end='')
+		print(f'{self.target}')
+		count = len(self.children)
+		for idx in range(count):
+			self.children[idx].print_tree(spaces+[idx < count-1])
+	
+def main():
+	args = get_args()
+	make = ['make', '-ndt']
+	if args.always_make: make.append('-B')
+	if args.directory:
+		make.append('-C')
+		make.append(args.directory)
+	if args.file:
+		make.append('-f')
+		make.append(args.file)
+	make += args.target
+	ps = subprocess.run(make, capture_output=True, check=True)
+	wait = True
+	pattern = "Considering target file "
+	root = Node("/make " + ' '.join(make[2:]), None, 0)
+	node = root
+	for ln in str(ps.stdout, 'utf-8').split('\n'):
+		if wait:
+			wait = not ln.startswith('Updating goal targets')
+			continue
+		if pattern not in ln: continue
+		if not ln.endswith("."): raise 'BUG-001: contact developer please.'
+		ln = ln.replace(pattern, '')[:-1]
+		node = node.add_child(ln)
+	root.print_tree([])
+if __name__ == '__main__': main()
