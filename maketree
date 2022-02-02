@@ -46,7 +46,7 @@ class Node():
 	
 def main():
 	args = get_args()
-	make = ['make', '-ndt']
+	make = ['make', '-d', '-nt']
 	if args.always_make: make.append('-B')
 	if args.directory:
 		make.append('-C')
@@ -55,10 +55,15 @@ def main():
 		make.append('-f')
 		make.append(args.file)
 	make += args.target
-	ps = subprocess.run(make, capture_output=True, check=True)
+	ps = subprocess.run(make, capture_output=True)
+	del make[1]
+	if ps.returncode != 0:
+		print('/', ' '.join(make), sep='')
+		ps = subprocess.run(make)
+		return 1
 	wait = True
 	pattern = "Considering target file "
-	root = Node("/make " + ' '.join(make[2:]), None, 0)
+	root = Node('/' + ' '.join(make), None, 0)
 	node = root
 	for ln in str(ps.stdout, 'utf-8').split('\n'):
 		if wait:
