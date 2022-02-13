@@ -1,19 +1,22 @@
-# maketree, print a tree of dependencies from GNU make
+# mktree, print a tree of dependencies from GNU make
 
-maketree calls 'make' in dry-run mode, assmebles a tree structure from make's debugging information, and prints it
+'mktree' assembles the dependency tree from make's debugging information, and prints it. It runs 'make' in dry-run mode, and all the parameters after 'mktree --'.
 
 ## Try out
 ```
-git clone https://github.com/daimh/maketree.git
-cd maketree
-./maketree -f TestMakefile
-./maketree -f TestMakefile t1 t2
-./maketree -f TestMakefile t2 t1
+git clone https://github.com/daimh/mktree.git
+cd mktree
+./mktree
+touch tc
+./mktree
+./mktree -a
+./mktree -a -- -B
+./mktree -- t1 t2
 ```
 
 ## Help
 ```
-maketree -h
+mktree -h
 ```
 
 ## Contribute

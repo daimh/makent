@@ -6,10 +6,7 @@ def get_args():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("target", help="pass to make", nargs='*')
 	parser.add_argument("-V", "--version", action='version', version='20220131')
-#	parser.add_argument("-v", "--verbose", help="increase output verbosity", action="store_true", required=False)
-	parser.add_argument("-B", "--always-make", help="pass to make", action="store_true")
-	parser.add_argument("-C", "--directory", metavar="DIR", help="pass to make",  required=False)
-	parser.add_argument("-f", "--file", metavar="FILE", help="pass to make",  required=False)
+	parser.add_argument("-a", "--all", help="show all targets. Strikethrough means no need to remake", action="store_true", required=False)
 	return parser.parse_args()
 	
 class Node():
@@ -24,10 +21,19 @@ class Node():
 		node = self
 		for i in range(self.depth-depth+1):
 			node = node.parent
-		child = Node(target[idx+1:-1], node, depth)
+		child = Node(target, node, depth)
 		node.children.append(child)
 		return child
-	def print_tree(self, spaces):
+	def need_remake(self, remakeit):
+		if self.depth > 0 and not remakeit[self.target]:
+			return False
+		trimmed = []
+		for c in self.children:
+			if c.need_remake(remakeit):
+				trimmed.append(c)
+		self.children = trimmed
+		return len(self.children) > 0 or remakeit[self.target]
+	def print_tree(self, spaces, remakeit):
 		for i in range(self.depth):
 			if i == self.depth - 1:
 				if spaces[i]:
@@ -39,21 +45,19 @@ class Node():
 					print('│   ', end='')
 				else:
 					print('    ', end='')
-		print(f'{self.target}')
+		if self.depth == 0:
+			print(self.target)
+		elif remakeit[self.target]:
+			print(self.target[2*self.depth-1:-1])
+		else:
+			print('\033[9m' + self.target[2*self.depth-1:-1] + '\033[0m')
 		count = len(self.children)
 		for idx in range(count):
-			self.children[idx].print_tree(spaces+[idx < count-1])
+			self.children[idx].print_tree(spaces+[idx < count-1], remakeit)
 	
 def main():
 	args = get_args()
 	make = ['make', '-d', '-nt']
-	if args.always_make: make.append('-B')
-	if args.directory:
-		make.append('-C')
-		make.append(args.directory)
-	if args.file:
-		make.append('-f')
-		make.append(args.file)
 	make += args.target
 	ps = subprocess.run(make, capture_output=True)
 	del make[1]
@@ -62,16 +66,32 @@ def main():
 		ps = subprocess.run(make)
 		return 1
 	wait = True
-	pattern = "Considering target file "
+	s_consider = "Considering target file "
+	s_noneed = "No need to remake target "
+	s_remake = "Must remake target "
 	root = Node('/' + ' '.join(make), None, 0)
+	remakeit = {root.target : False}
 	node = root
 	for ln in str(ps.stdout, 'utf-8').split('\n'):
+		if len(ln) == 0: continue
+		if ln[-1] != '.': continue
 		if wait:
 			wait = not ln.startswith('Updating goal targets')
 			continue
-		if pattern not in ln: continue
-		if not ln.endswith("."): raise 'BUG-001: contact developer please.'
-		ln = ln.replace(pattern, '')[:-1]
-		node = node.add_child(ln)
-	root.print_tree([])
+		if s_consider in ln: 
+			ln = ln.replace(s_consider, '')[:-1]
+			node = node.add_child(ln)
+		elif s_noneed in ln: 
+			ln = ln.replace(s_noneed, '')[:-1]
+			if ln in remakeit: raise Exception('BUG-001')
+			remakeit[ln] = False
+		elif s_remake in ln:
+			ln = ln.replace(s_remake, '')[:-1]
+			if ln in remakeit: raise Exception('BUG-002')
+			remakeit[ln] = True
+	if not args.all:
+		if not root.need_remake(remakeit):
+			root.target += ': up to date.'
+	root.print_tree([], remakeit)
+
 if __name__ == '__main__': main()
