@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #Author: Manhong Dai, manhongdai@gmail.com
 #License: GPLv3
-import argparse, subprocess
+import argparse, subprocess, sys
 def get_args():
 	parser = argparse.ArgumentParser()
 	parser.add_argument("target", help="pass to make", nargs='*')
@@ -74,6 +74,9 @@ def main():
 	node = root
 	for ln in str(ps.stdout, 'utf-8').split('\n'):
 		if len(ln) == 0: continue
+		if ln.startswith('make '): 
+			print('MSG-001: recursive makefile is not supported yet', file=sys.stderr)
+			return
 		if ln[-1] != '.': continue
 		if wait:
 			wait = not ln.startswith('Updating goal targets')
@@ -83,7 +86,7 @@ def main():
 			node = node.add_child(ln)
 		elif s_noneed in ln: 
 			ln = ln.replace(s_noneed, '')[:-1]
-			if ln in remakeit: raise Exception('BUG-001')
+			if ln in remakeit: raise Exception(f'BUG-001')
 			remakeit[ln] = False
 		elif s_remake in ln:
 			ln = ln.replace(s_remake, '')[:-1]
