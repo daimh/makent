@@ -4,9 +4,9 @@
 import argparse, subprocess, sys
 def get_args():
 	parser = argparse.ArgumentParser()
-	parser.add_argument("target", help="pass to make", nargs='*')
+	parser.add_argument("MakeArguments", help="arguments passed to make. Tip: Use '--' to separate them from mktree's own arguments. E.g., 'mktree -a -- -B'", nargs='*')
 	parser.add_argument("-V", "--version", action='version', version='20220131')
-	parser.add_argument("-a", "--all", help="show all targets. Strikethrough means no need to remake", action="store_true", required=False)
+	parser.add_argument("-a", "--all", help="show all make targets. Strikethrough means no need to remake", action="store_true", required=False)
 	return parser.parse_args()
 	
 class Node():
@@ -58,7 +58,7 @@ class Node():
 def main():
 	args = get_args()
 	make = ['make', '-d', '-nt']
-	make += args.target
+	make += args.MakeArguments
 	ps = subprocess.run(make, capture_output=True)
 	del make[1]
 	if ps.returncode != 0:

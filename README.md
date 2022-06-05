@@ -2,16 +2,22 @@
 
 'mktree' assembles the dependency tree from make's debugging information, and prints it. It runs 'make' in dry-run mode, and all the parameters after 'mktree --'.
 
+## Installation
+```
+wget https://raw.githubusercontent.com/daimh/mktree/master/mktree
+chmod +x mktree
+mv mktree ~/bin/ # or any directory in PATH
+```
+
 ## Try out
 ```
-git clone https://github.com/daimh/mktree.git
-cd mktree
-./mktree
+wget https://raw.githubusercontent.com/daimh/mktree/master/Makefile
+mktree
 touch tc
-./mktree
-./mktree -a
-./mktree -a -- -B
-./mktree -- t1 t2
+mktree
+mktree -a
+mktree -a -- -B
+mktree -- t1 t2
 ```
 
 ## Help
