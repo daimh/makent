@@ -1,28 +1,28 @@
-# mktree, print a tree of dependencies from GNU make
+# makent, print a tree of dependencies from GNU make
 
-'mktree' assembles the dependency tree from make's debugging information, and prints it. It runs 'make' in dry-run mode, and all the parameters after 'mktree --'.
+'makent' assembles the dependency tree from make's debugging information, and prints it. It runs 'make -nt' in dry-run mode, and all the parameters after 'makent --'.
 
 ## Installation
 ```
-wget https://raw.githubusercontent.com/daimh/mktree/master/mktree
-chmod +x mktree
-mv mktree ~/bin/ # or any directory in PATH
+wget https://raw.githubusercontent.com/daimh/makent/master/makent
+chmod +x makent
+mv makent ~/bin/ # or any directory in PATH
 ```
 
 ## Try out
 ```
-wget https://raw.githubusercontent.com/daimh/mktree/master/Makefile
-mktree
+wget https://raw.githubusercontent.com/daimh/makent/master/Makefile
+makent
 touch tc
-mktree
-mktree -a
-mktree -a -- -B
-mktree -- t1 t2
+makent
+makent -a
+makent -a -- -B
+makent -- t1 t2
 ```
 
 ## Help
 ```
-mktree -h
+makent -h
 ```
 
 ## Contribute
