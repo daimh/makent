@@ -1,14 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #Author: Manhong Dai, manhongdai@gmail.com
 #License: GPLv3
 import argparse, subprocess, sys
-def get_args():
-	parser = argparse.ArgumentParser()
-	parser.add_argument("MakeArguments", help="arguments passed to make. Tip: Use '--' to separate them from makent's own arguments. E.g., 'makent -a -- -B'", nargs='*')
-	parser.add_argument("-V", "--version", action='version', version='20220131')
-	parser.add_argument("-a", "--all", help="show all make targets. Strikethrough means no need to remake", action="store_true", required=False)
-	return parser.parse_args()
-	
 class Node():
 	def __init__(self, target, parent, depth):
 		self.target = target
@@ -54,12 +47,31 @@ class Node():
 		count = len(self.children)
 		for idx in range(count):
 			self.children[idx].print_tree(spaces+[idx < count-1], remakeit)
+
+def get_args():
+	parser = argparse.ArgumentParser()
+	parser.add_argument("MakeArguments", help="arguments passed to make. Tip: Use '--' to separate them from makent's own arguments. E.g., 'makent -a -- -B'", nargs='*')
+	parser.add_argument("-V", "--version", action='version', version='20220131')
+	parser.add_argument("-a", "--all", help="show all make targets. Strikethrough means no need to remake", action="store_true", required=False)
+	return parser.parse_args()
 	
+def	check_make_version():
+	try:
+		ps = subprocess.run(['make', '--version'], stdout=subprocess.PIPE)
+		if ps.returncode != 0: sys.exit(1)
+	except FileNotFoundError:
+		print("No 'make' in your PATH, quitting")
+		sys.exit(1)
+	if ps.stdout[:9] != b'GNU Make ' or ps.stdout[9:11] in [ b'3.', b'2.', b'1.']:
+		print("'make' is not version 4 or newer, quitting")
+		sys.exit(1)
+
 def main():
+	check_make_version()
 	args = get_args()
 	make = ['make', '-d', '-nt']
 	make += args.MakeArguments
-	ps = subprocess.run(make, capture_output=True)
+	ps = subprocess.run(make, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	del make[1]
 	if ps.returncode != 0:
 		print('/', ' '.join(make), sep='')
